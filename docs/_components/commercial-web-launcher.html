@@ -1,0 +1,267 @@
+
+
+<div class="bootstrap">
+
+ 
+<b-modal id="cluster-details-modal" title="Cluster Details" static ok-only class="modal-xl" dialog-class="modal-cluster-details" scrollable>
+
+ 
+<textarea v-if="showModalTestLinks" ref="showModalTestLinksTextarea" class="form-control w-100" style="height: 400px" :value="showModalTestLinks"></textarea>
+
+ 
+<b-table v-else stroped :items="viewClusterDetailsData && viewClusterDetailsData.servers">
+
+ 
+<template slot="name" slot-scope="scope">
+
+ 
+{{ scope.item.name }}
+
+ 
+&nbsp;&nbsp;<a v-if="expandableEnvironments.includes(scope.item.name)" href="javascript:void(0)" title="" @click="generateModalTestLinks(scope.item.name)"><i class="fa fa-link"></i></a>
+
+ 
+</template>
+
+ 
+</b-table>
+
+ 
+</b-modal>
+
+ 
+<b-container fluid class="p-0">
+
+ 
+<b-form-row>
+
+ 
+<b-col cols="3">
+
+ 
+<b-card no-body header-class="px-3">
+
+ 
+<h2 slot="header" class="h6 m-0">Environment</h2>
+
+ 
+<b-list-group flush>
+
+ 
+<div
+
+ 
+v-for="(environment, i) in environmentMap"
+
+ 
+:key="i"
+
+ 
+class="d-flex flex-direction-row overflow-hidden"
+
+ 
+:class="{ 'border-bottom': i < environmentMap.length-1 }">
+
+ 
+<b-list-group-item
+
+ 
+:active="selectedEnvironment == i"
+
+ 
+class="px-3 py-1 rounded-0 border-0"
+
+ 
+button
+
+ 
+@click="onSelectEnvironment(i)">
+
+ 
+{{ environment.name }}
+
+ 
+</b-list-group-item>
+
+ 
+<b-list-group-item
+
+ 
+class="border-0 text-center p-0"
+
+ 
+style="width: 3rem"
+
+ 
+button
+
+ 
+title="Cluster Details"
+
+ 
+@click="onViewClusterDetails(i)">
+
+ 
+<i class="text-primary fa fa-info-circle"></i>
+
+ 
+</button>
+
+ 
+</div>
+
+ 
+</b-list-group>
+
+ 
+</b-card>
+
+ 
+</b-col>
+
+ 
+<b-col cols="3">
+
+ 
+<b-card no-body header-class="px-3">
+
+ 
+<h2 slot="header" class="h6 m-0">Server</h2>
+
+ 
+<b-list-group flush>
+
+ 
+<b-list-group-item
+
+ 
+v-for="(server, i) in environmentMap[selectedEnvironment].servers"
+
+ 
+:key="i"
+
+ 
+:active="selectedServer == i"
+
+ 
+class="px-3 py-1"
+
+ 
+button
+
+ 
+@click="onSelectServer(i)">
+
+ 
+{{ server.name }}{{ server.url ? '&nbsp;&raquo;' : '' }}
+
+ 
+</b-list-group-item>
+
+ 
+</b-list-group>
+
+ 
+</b-card>
+
+ 
+</b-col>
+
+ 
+<b-col cols="3" v-if="selectedServer != null">
+
+ 
+<b-card no-body header-class="px-3">
+
+ 
+<h2 slot="header" class="h6 m-0">Constituent</h2>
+
+ 
+<b-list-group flush>
+
+ 
+<b-list-group-item
+
+ 
+v-for="(constituent, i) in constituentMap"
+
+ 
+:key="i"
+
+ 
+:active="selectedConstituent == i"
+
+ 
+class="px-3 py-1"
+
+ 
+button
+
+ 
+@click="selectedConstituent = i">
+
+ 
+{{ constituent.name }}
+
+ 
+</b-list-group-item>
+
+ 
+</b-list-group>
+
+ 
+</b-card>
+
+ 
+</b-col>
+
+ 
+<b-col cols="3" v-if="selectedServer != null">
+
+ 
+<b-card no-body header-class="px-3">
+
+ 
+<h2 slot="header" class="h6 m-0">Line of Business</h2>
+
+ 
+<b-list-group flush>
+
+ 
+<b-list-group-item
+
+ 
+v-for="(lob, i) in constituentMap[selectedConstituent].lobs"
+
+ 
+class="px-3 py-1"
+
+ 
+button
+
+ 
+@click="onSelectLob(i)">
+
+ 
+{{ lob.name }}&nbsp;&raquo;
+
+ 
+</b-list-group-item>
+
+ 
+</b-list-group>
+
+ 
+</b-card>
+
+ 
+</b-col>
+
+ 
+</b-row>
+
+ 
+</b-container>
+
+ 
+</div>

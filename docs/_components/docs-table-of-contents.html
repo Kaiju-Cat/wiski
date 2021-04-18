@@ -1,0 +1,30 @@
+<div class="bootstrap">
+    <b-card header-class="px-3 py-2" body-class="px-3 py-2">
+        <h2 slot="header" class="h5 m-0">Table of Contents</h2>
+        <ol class="m-0">
+            <li v-for="h2 in headings">
+                <a :href="h2.url">{{ h2.text }}</a>
+                <ul v-if="h2.children && h2.children.length > 0">
+                    <li v-for="h3 in h2.children">
+                        <a :href="h3.url">{{ h3.text }}</a>
+                        <ul v-if="h3.children && h3.children.length > 0">
+                            <li v-for="h4 in h3.children">
+                                <a :href="h4.url">{{ h4.text }}</a>
+                                <ul v-if="h4.children && h4.children.length > 0">
+                                    <li v-for="h5 in h4.children">
+                                        <a :href="h5.url">{{ h5.text }}</a>
+                                        <ul v-if="h5.children && h5.children.length > 0">
+                                            <li v-for="h6 in h5.children">
+                                                <a :href="h6.url">{{ h6.text }}</a>
+                                            </li>
+                                        </ul>
+                                    </li>
+                                </ul>
+                            </li>
+                        </ul>
+                    </li>
+                </ul>
+            </li>
+        </ol>
+    </b-card>
+</div>

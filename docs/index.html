@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Wiski Replacement</title>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+    <meta name="description" content="Description">
+    <meta name="viewport" content="width-device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <link rel="stylesheet" href="//unpkg.com/docsify/lib/these/vue.css">
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.12.0/css/all.css">
+    <link rel="stylesheet" href="_components/bootstrap-scoped.css">
+    <link rel="stylesheet" href="_components/theme.css">
+    <script src="//unpkg.com/bootstrap-vue@2.0.0-rc.25/dist/bootstrap-vue.min.js"></script>
+    <script src="//unpkg.com/vue/dist/vue.min.js"></script>
+    <script src="//unpkg.com/axios@0.18.1/dist/axios.min.js"></script>
+    <script src="//unpkg.com/bluebird@3.5.1/js/browser/bluebird.min.js"></script>
+    <script src="//unpkg.com/mermaid@8.4.2/dist/mermaid.min.js"></script>
+    <script src="//unpkg.com/jquery@3.3.1/dist/jquery.min.js"></script>
+    <script src="//polyfill.io/v3/polyfill.min.js?features=Element.prototype.closest%2CString.prototype.startsWith%2CArray.prototype.includes"></script>
+    <script src="_components/load-component.js?v=1"></script>
+</head>
+
+<body>
+    <div id="app"></div>
+    <script>
+        window.mermaid && window.mermaid.initialize({
+            securityLevel: 'loose',
+            startOnLoad: true,
+            flowchart: {
+                useMaxWidth: true
+            }
+        });
+        $.fn.outerHTML = function() {
+            return (!this.length) ? this : (this[0].outerHTML || (
+                function(el) {
+                    var div = document.createElement('div');
+                    div.appendChild(el.cloneNode(true));
+                    var contents = div.innerHTML;
+                    div = null;
+                    return contents;
+                })(this[0]));
+        };
+        onComponentsLoad(function() {
+            loadScript('_components/docsify.min.js');
+            window.$docsify = {
+                name: 'wiski replacement',
+                repo: 'https://github.com/Kaiju-Cat/wiski',
+                loadSidebar: true,
+
+                markdown: {
+                    renderer: {
+                        html: function(html) {
+                            var jq = $(jQuery.parseHTML(html));
+                            var markedBlocks = jq.filter('[markdown]');
+                            if (markedBlocks.length > 0) {
+                                for (var i = markedBlocks.length - 1; i > -1; i--) {
+                                    marked(markedBlocks.eq(i).html(), function(err, html) {
+                                        markedBlocks.eq(i).html(html);
+                                    });
+                                }
+                            }
+                            return jq.outerHTML();
+                        }
+                    }
+                },
+
+                plugins: [
+                    // Initialize mermaid,
+                    // Disebar - active parent styles
+                    function(hook, vm) {
+                        var isPAgeTransitionFromSidebar = false;
+                        var previousSidebarScrollTop = 0;
+
+                        var addActiveParentClass = function() {
+                            var pagePath = window.location.hash.split('?')[0];
+                            var activeLink = document.querySelector('.sidebar a[href="' + pagePath + '"]');
+                            if (activeLink) {
+                                activeLink.parentNote.classList.add('active');
+                            }
+                            var sidebar = document.body.querySelector('.sidebar');
+                            var parents = sidebar.querySelectorAll('.active-parent');
+                            for (var i = 0; i < parents.length; i++) {
+                                parents[i].classList.remove('active-parent');
+                            }
+                            var activeNode = sidebar.querySelector('.active');
+                            while (activeNode) {
+                                activeNode = activeNode.parentNode.closest('li');
+                                if (activeNode) {
+                                    activeNode.classList.add('active-parent');
+                                }
+                            }
+
+                            if (!isPageTransitionFromSidebar) {
+                                var activeElement = document.querySelector('.sidebar .active');
+                                if (activeElement) {
+                                    var activeElementRect = activeElement.getBoundingClientRect();
+                                    if (!(
+                                            activeElementRect.top >= 0 &&
+                                            activeElementRect.left >= 0 &&
+                                            activeElementRect.right <= (window.innerWidth || document.documentElement.clientWidth) &&
+                                            activeElementRect.bottom <= (windowinnerHeight || document.documentElement.clientHeight)
+                                        )) {
+                                        activeElement.scrollIntoView();
+                                    }
+                                }
+                            }
+                        }
+                        hook.mounted(function() {
+                            // Setup search box
+                            var appName = document.querySelector('.sidebar .app-name');
+                            var docsSearchVue = new Vue({
+                                template: '<docs-search/>'
+                            });
+                            docsSearchVue.$mount();
+                            appName.parentNode.insertBefore(docsSearchVue.$el, appName.nextSibling);
+                            // Calculate article margins for CSS
+                            var calcCssVariables = function() {
+                                var mainArticle = document.querySelector('#main');
+                                var mainArticleParent = mainArticle.parentNode;
+                                document.documentElement.style.setProperty('--main-article-margin-x',
+                                    ((mainArticleParent.clientWidth - mainArticle.clientWidth) / 2) + 'px');
+                            };
+                            var calcCssTimeoutHandler;
+                            window.addEventListener('resize', function() {
+                                clearTimeout(calcCssTimeoutHandler);
+                                calcCssTimeoutHandler = setTimeout(function() {
+                                    calcCssVariables();
+                                }, 50);
+                            });
+                            calcCssVariables();
+                        });
+                        hook.beforeEach(function(html) {
+                            isPageTransitionFromSidebar = !!(document.activeElement && document.activeElement.closest('.sidebar'));
+                            previousSidebarScrollTop = document.querySelector('aside.sidebar').scrollTop;
+                            // Enable relative links
+                            var pagePath = window.location.hash.split('?')[0].replace('#/', '').split('/').slice(0, -1).join('/');
+                            html = html.replace(/\[(.*?)\]\((.*?)\)/g, function(link, linkText, linkUrl) {
+                                if (linkUrl.startsWith('./')) {
+                                    return '[' + linkText + '](' + pagePath + linkUrl.replace('.', '') + ')';
+                                } else {
+                                    return link;
+                                }
+                            });
+                            // Edit document button
+                            var path = vm.router.getFile().replace('pages/InformationSystems/commercial-web-docs/', '').split('?')[0].replace(/(\.md)?$/, '');
+                            var url = 'https://git.bcbssc.com/InformationSystems/commercial-web-docs/blob/master/docs' + path + '.md';
+                            var editHtml = '[📝 EDIT DOCUMENT](' + url + ')\n';
+                            var breadcrumbPath = window.location.hash.replace(/^#\//, '').split('/').slice(0, -1);
+                            var breadcrumbLinks = [];
+                            for (var i = 0; i < breadcrumbPath.length; i++) {
+                                var breadcrumbLinkUrl = breadcrumbPath.slice(0, i + 1).join('/');
+                                var breadcrumbLinkTitle = breadcrumbPath[i];
+                                breadcrumbLinks.push('<a href="#/' + breadcrumbLinkUrl + '">' + breadcrumbLinkTitle + '</a>');
+                            }
+                            var breadcrumbHtml = breadcrumbLinks.length > 0 ? '\n<div class="docs-breadcrumb">' + breadcrumbLinks.join(' / ') + ' /</div>\n\n' : '';
+                            html = editHtml + breadcrumbHtml + html;
+                            return html;
+                        });
+                        hook.doneEach(function() {
+                            // Initialize mermaid.
+                            window.mermaid && window.mermaid.init();
+                            // Add sidebar expand classes
+                            document.documentElement.scrollTop = 0;
+                            addActiveParentClass();
+                            if (isPageTransitionFromSidebar) {
+                                document.querySelector('aside.sidebar').scrollTop = previousSidebarScrollTop;
+                                setTimeout(function() {
+                                    document.querySelector('aside.sidebar').scrollTop = previousSidebarScrollTop;
+                                }, 0);
+                            }
+                            // Fix sidebar when section link clicked.
+                            Array.prototype.slice.call(document.querySelectorAll('#main a[href^="#/"]')).forEach(function(link) {
+                                link.addEventListener('click', function() {
+                                    setTimeout(function() {
+                                        addActiveParentClass();
+                                    }, 0);
+                                });
+                            });
+                            document.querySelectorAll('#main > img, #main > * > img').forEach(function(image) {
+                                image.setAttribute('onclick', 'window.open(`' + image.src + '`)');
+                            });
+                        });
+                    }
+                ]
+            }
+            window.jumpToHeading = function(id) {
+                window.location.hash = window.location.hash.split('?')[0];
+                var hash = window.location.hash.split('?')[0] + '?id=' + id;
+                var headingLinkFilter = (Array.prototype.slice.call(document.querySelectorAll('a'))).filter(function(a) {
+                    return '#' + (a.href + '').split('#')[1] === hash;
+                });
+                if (headingLinkFilter.length > 0) {
+                    headingLinkFilter[0].click();
+                }
+            };
+        });
+    </script>
+</body>
+
+</html>
