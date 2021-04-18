@@ -19,7 +19,6 @@
     <script src="//unpkg.com/jquery@3.3.1/dist/jquery.min.js"></script>
     <script src="//polyfill.io/v3/polyfill.min.js?features=Element.prototype.closest%2CString.prototype.startsWith%2CArray.prototype.includes"></script>
     <script src="_components/load-component.js?v=1"></script>
-
 </head>
 
 <body>
@@ -34,7 +33,7 @@
         });
         $.fn.outerHTML = function() {
             return (!this.length) ? this : (this[0].outerHTML || (
-                funtion(el) {
+                function(el) {
                     var div = document.createElement('div');
                     div.appendChild(el.cloneNode(true));
                     var contents = div.innerHTML;
@@ -57,7 +56,7 @@
                             if (markedBlocks.length > 0) {
                                 for (var i = markedBlocks.length - 1; i > -1; i--) {
                                     marked(markedBlocks.eq(i).html(), function(err, html) {
-                                        markedBlocks.eq(i) html(html);
+                                        markedBlocks.eq(i).html(html);
                                     });
                                 }
                             }
