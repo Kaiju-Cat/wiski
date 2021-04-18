@@ -21,13 +21,20 @@
     <script src="_components/load-component.js?v=1"></script>
 
 </head>
+
 <body>
     <div id="app"></div>
     <script>
-        window.mermaid && window.mermaid.initialize({ securityLevel: 'loose', startOnLoad: true, flowchart: { useMaxWidth: true } });
+        window.mermaid && window.mermaid.initialize({
+            securityLevel: 'loose',
+            startOnLoad: true,
+            flowchart: {
+                useMaxWidth: true
+            }
+        });
         $.fn.outerHTML = function() {
             return (!this.length) ? this : (this[0].outerHTML || (
-                funtion(el){
+                funtion(el) {
                     var div = document.createElement('div');
                     div.appendChild(el.cloneNode(true));
                     var contents = div.innerHTML;
@@ -48,9 +55,9 @@
                             var jq = $(jQuery.parseHTML(html));
                             var markedBlocks = jq.filter('[markdown]');
                             if (markedBlocks.length > 0) {
-                                for (var i = markedBlocks.length -1; i > -1; i--) {
+                                for (var i = markedBlocks.length - 1; i > -1; i--) {
                                     marked(markedBlocks.eq(i).html(), function(err, html) {
-                                        markedBlocks.eq(i)html(html);
+                                        markedBlocks.eq(i) html(html);
                                     });
                                 }
                             }
@@ -89,16 +96,107 @@
                                 var activeElement = document.querySelector('.sidebar .active');
                                 if (activeElement) {
                                     var activeElementRect = activeElement.getBoundingClientRect();
-                                    if (
-                                        !(
-                                        activeElementRect.top >= 0 &&
-                                        activeElementRect.left >= 0 &&
-                                        activeElementRect.right <= (window.innerWidth || document.documentElement.clientWidth) &&
-                                        activeElementRect.bottom <= (windowinnerHeight || document.documentElement.clientHeight)
-                                        )
-                                    ) {
+                                    if (!(
+                                            activeElementRect.top >= 0 &&
+                                            activeElementRect.left >= 0 &&
+                                            activeElementRect.right <= (window.innerWidth || document.documentElement.clientWidth) &&
+                                            activeElementRect.bottom <= (windowinnerHeight || document.documentElement.clientHeight)
+                                        )) {
                                         activeElement.scrollIntoView();
                                     }
                                 }
                             }
                         }
+                        hook.mounted(function() {
+                            // Setup search box
+                            var appName = document.querySelector('.sidebar .app-name');
+                            var docsSearchVue = new Vue({
+                                template: '<docs-search/>'
+                            });
+                            docsSearchVue.$mount();
+                            appName.parentNode.insertBefore(docsSearchVue.$el, appName.nextSibling);
+                            // Calculate article margins for CSS
+                            var calcCssVariables = function() {
+                                var mainArticle = document.querySelector('#main');
+                                var mainArticleParent = mainArticle.parentNode;
+                                document.documentElement.style.setProperty('--main-article-margin-x',
+                                    ((mainArticleParent.clientWidth - mainArticle.clientWidth) / 2) + 'px');
+                            };
+                            var calcCssTimeoutHandler;
+                            window.addEventListener('resize', function() {
+                                clearTimeout(calcCssTimeoutHandler);
+                                calcCssTimeoutHandler = setTimeout(function() {
+                                    calcCssVariables();
+                                }, 50);
+                            });
+                            calcCssVariables();
+                        });
+                        hook.beforeEach(function(html) {
+                            isPageTransitionFromSidebar = !!(document.activeElement && document.activeElement.closest('.sidebar'));
+                            previousSidebarScrollTop = document.querySelector('aside.sidebar').scrollTop;
+                            // Enable relative links
+                            var pagePath = window.location.hash.split('?')[0].replace('#/', '').split('/').slice(0, -1).join('/');
+                            html = html.replace(/\[(.*?)\]\((.*?)\)/g, function(link, linkText, linkUrl) {
+                                if (linkUrl.startsWith('./')) {
+                                    return '[' + linkText + '](' + pagePath + linkUrl.replace('.', '') + ')';
+                                } else {
+                                    return link;
+                                }
+                            });
+                            // Edit document button
+                            var path = vm.router.getFile().replace('pages/InformationSystems/commercial-web-docs/', '').split('?')[0].replace(/(\.md)?$/, '');
+                            var url = 'https://git.bcbssc.com/InformationSystems/commercial-web-docs/blob/master/docs' + path + '.md';
+                            var editHtml = '[📝 EDIT DOCUMENT](' + url + ')\n';
+                            var breadcrumbPath = window.location.hash.replace(/^#\//, '').split('/').slice(0, -1);
+                            var breadcrumbLinks = [];
+                            for (var i = 0; i < breadcrumbPath.length; i++) {
+                                var breadcrumbLinkUrl = breadcrumbPath.slice(0, i + 1).join('/');
+                                var breadcrumbLinkTitle = breadcrumbPath[i];
+                                breadcrumbLinks.push('<a href="#/' + breadcrumbLinkUrl + '">' + breadcrumbLinkTitle + '</a>');
+                            }
+                            var breadcrumbHtml = breadcrumbLinks.length > 0 ? '\n<div class="docs-breadcrumb">' + breadcrumbLinks.join(' / ') + ' /</div>\n\n' : '';
+                            html = editHtml + breadcrumbHtml + html;
+                            return html;
+                        });
+                        hook.doneEach(function() {
+                            // Initialize mermaid.
+                            window.mermaid && window.mermaid.init();
+                            // Add sidebar expand classes
+                            document.documentElement.scrollTop = 0;
+                            addActiveParentClass();
+                            if (isPageTransitionFromSidebar) {
+                                document.querySelector('aside.sidebar').scrollTop = previousSidebarScrollTop;
+                                setTimeout(function() {
+                                    document.querySelector('aside.sidebar').scrollTop = previousSidebarScrollTop;
+                                }, 0);
+                            }
+                            // Fix sidebar when section link clicked.
+                            Array.prototype.slice.call(document.querySelectorAll('#main a[href^="#/"]')).forEach(function(link) {
+                                link.addEventListener('click', function() {
+                                    setTimeout(function() {
+                                        addActiveParentClass();
+                                    }, 0);
+                                });
+                            });
+                            document.querySelectorAll('#main > img, #main > * > img').forEach(function(image) {
+                                image.setAttribute('onclick', 'window.open(`' + image.src + '`)');
+                            });
+                        });
+                    }
+                ]
+            }
+            window.jumpToHeading = function(id) {
+                window.location.hash = window.location.hash.split('?')[0];
+                var hash = window.location.hash.split('?')[0] + '?id=' + id;
+                var headingLinkFilter = (Array.prototype.slice.call(document.querySelectorAll('a'))).filter(function(a) {
+                    return '#' + (a.href + '').split('#')[1] === hash;
+                });
+                if (headingLinkFilter.length > 0) {
+                    headingLinkFilter[0].click();
+                }
+            };
+        });
+    </script>
+</body>
+
+</html>
