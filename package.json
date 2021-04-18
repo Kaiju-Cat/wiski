@@ -1,6 +1,6 @@
 {
     "name": "wiski",
-    "scripts":{
+    "scripts": {
         "serve": "http=server ./docs/ -p 3080 -o"
     },
     "devDependencies": {
