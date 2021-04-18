@@ -4,9 +4,9 @@
 <head>
     <meta charset="UTF-8">
     <title>Wiski Replacement</title>
-    <meta>
-    <meta>
-    <meta>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+    <meta name="description" content="Description">
+    <meta name="viewport" content="width-device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
     <link rel="stylesheet" href="//unpkg.com/docsify/lib/these/vue.css">
     <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.12.0/css/all.css">
     <link rel="stylesheet" href="_components/bootstrap-scoped.css">
@@ -21,5 +21,84 @@
     <script src="_components/load-component.js?v=1"></script>
 
 </head>
+<body>
+    <div id="app"></div>
+    <script>
+        window.mermaid && window.mermaid.initialize({ securityLevel: 'loose', startOnLoad: true, flowchart: { useMaxWidth: true } });
+        $.fn.outerHTML = function() {
+            return (!this.length) ? this : (this[0].outerHTML || (
+                funtion(el){
+                    var div = document.createElement('div');
+                    div.appendChild(el.cloneNode(true));
+                    var contents = div.innerHTML;
+                    div = null;
+                    return contents;
+                })(this[0]));
+        };
+        onComponentsLoad(function() {
+            loadScript('_components/docsify.min.js');
+            window.$docsify = {
+                name: 'wiski replacement',
+                repo: 'https://github.com/Kaiju-Cat/wiski',
+                loadSidebar: true,
 
-</html>
+                markdown: {
+                    renderer: {
+                        html: function(html) {
+                            var jq = $(jQuery.parseHTML(html));
+                            var markedBlocks = jq.filter('[markdown]');
+                            if (markedBlocks.length > 0) {
+                                for (var i = markedBlocks.length -1; i > -1; i--) {
+                                    marked(markedBlocks.eq(i).html(), function(err, html) {
+                                        markedBlocks.eq(i)html(html);
+                                    });
+                                }
+                            }
+                            return jq.outerHTML();
+                        }
+                    }
+                },
+
+                plugins: [
+                    // Initialize mermaid,
+                    // Disebar - active parent styles
+                    function(hook, vm) {
+                        var isPAgeTransitionFromSidebar = false;
+                        var previousSidebarScrollTop = 0;
+
+                        var addActiveParentClass = function() {
+                            var pagePath = window.location.hash.split('?')[0];
+                            var activeLink = document.querySelector('.sidebar a[href="' + pagePath + '"]');
+                            if (activeLink) {
+                                activeLink.parentNote.classList.add('active');
+                            }
+                            var sidebar = document.body.querySelector('.sidebar');
+                            var parents = sidebar.querySelectorAll('.active-parent');
+                            for (var i = 0; i < parents.length; i++) {
+                                parents[i].classList.remove('active-parent');
+                            }
+                            var activeNode = sidebar.querySelector('.active');
+                            while (activeNode) {
+                                activeNode = activeNode.parentNode.closest('li');
+                                if (activeNode) {
+                                    activeNode.classList.add('active-parent');
+                                }
+                            }
+
+                            if (!isPageTransitionFromSidebar) {
+                                var activeElement = document.querySelector('.sidebar .active');
+                                if (activeElement) {
+                                    var activeElementRect = activeElement.getBoundingClientRect();
+                                    if (
+                                        !(
+                                        activeElementRect.top >= 0 &&
+                                        activeElementRect.left >= 0 &&
+                                        activeElementRect.right <= (window.innerWidth || document.documentElement.clientWidth) &&
+                                        activeElementRect.bottom <= (windowinnerHeight || document.documentElement.clientHeight)
+                                        )
+                                    ) {
+                                        activeElement.scrollIntoView();
+                                    }
+                                }
+                            }
+                        }
